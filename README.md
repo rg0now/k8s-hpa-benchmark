@@ -15,9 +15,9 @@ end
 
 ## TL;DR 
 
-As HPA is scaling each microseservice independently, as per the local load experienced by the
-microservice, it will start to scale only when all preceding microservices in the chain have
-finished scaling.
+As HPA is scaling microseservices independently as per the local load, each microservice will have
+to wait until all microservices that precede it in the chain have finished scaling. This yields
+several minutes lag between the scaling of each subsequent microservice.
 
 ![CPU consumption in time (green: Chain 1, blue: Chain 2, red: Chain 3)](res/cpu_chain_3.png)
 
@@ -33,7 +33,8 @@ This causes HTTP requests to time out until there is at least one microservice t
 
 Chainer is a simple CPU load generator that you can use to run the microservices. The app takes the
 CPU time to burn per each request (`CHAINER_LOAD_PER_REQUEST`) and the address of the next service
-to call in the chain (`CHAINER_NEXT_SERVICE`) (empty means no next service).
+to call in the chain (`CHAINER_NEXT_SERVICE`) as environment variables. The default is 1ms load per
+request and no next service.
 
 Create the microservice graph with 3 `chainer` deployments:
 
@@ -98,7 +99,7 @@ helm install grafana grafana/grafana
 kubectl expose deployment grafana --type=LoadBalancer --port 3000 --target-port=3000
 ```
 
-The Grafana password
+The Grafana password:
 
 ``` console
 kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
@@ -118,3 +119,6 @@ Run the benchmark:
 ``` console
 CHAINER_IP=$(kubectl get svc -l app=chain-1 -o jsonpath={.items[0].status.loadBalancer.ingress[0].ip}) K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=html-report.html ./k6 run script.js
 ```
+
+This will create a fancy web dashboard to monitor the load tester and the final report is saved
+into the self-contained HTML `html-report.html`.
