@@ -1,0 +1,164 @@
+---
+#
+# CHAIN-1
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chain-1
+  labels:
+    app: chain-1
+spec:
+  selector:
+    matchLabels:
+      app: chain-1
+  template:
+    metadata:
+      labels:
+        app: chain-1
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/metrics'
+        prometheus.io/port: '8888'
+    spec:
+      containers:
+      - name: chain-1
+        # image: "localhost/chainer:latest"
+        image: "docker.io/retvari/chainer:latest"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+        env:
+        - name: CHAINER_NEXT_SERVICE
+          value: "chain-2.default.svc:8888"
+        - name: CHAINER_LOAD_PER_REQUEST
+          value: "8ms"  # 50 mcore @ 10 qps
+        resources: 
+          requests: { cpu: "100m" }
+          limits: { cpu: "100m" }
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chain-1
+  labels:
+    app: chain-1
+    service: chain-1
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8888
+    name: http
+  selector:
+    app: chain-1
+---
+#
+# CHAIN-2
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chain-2
+  labels:
+    app: chain-2
+spec:
+  selector:
+    matchLabels:
+      app: chain-2
+  template:
+    metadata:
+      labels:
+        app: chain-2
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/metrics'
+        prometheus.io/port: '8888'
+    spec:
+      containers:
+      - name: chain-2
+        # image: "localhost/chainer:latest"
+        image: "docker.io/retvari/chainer:latest"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+        env:
+        - name: CHAINER_NEXT_SERVICE
+          value: "chain-3.default.svc:8888"
+        - name: CHAINER_LOAD_PER_REQUEST
+          value: "8ms"  # 50 mcore @ 10 qps
+        resources: 
+          requests: { cpu: "100m" }
+          limits: { cpu: "100m" }
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chain-2
+  labels:
+    app: chain-2
+    service: chain-2
+spec:
+  ports:
+  - port: 8888
+    name: http
+  selector:
+    app: chain-2
+---
+#
+# CHAIN-3
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chain-3
+  labels:
+    app: chain-3
+spec:
+  selector:
+    matchLabels:
+      app: chain-3
+  template:
+    metadata:
+      labels:
+        app: chain-3
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/metrics'
+        prometheus.io/port: '8888'
+    spec:
+      containers:
+      - name: chain-3
+        # image: "localhost/chainer:latest"
+        image: "docker.io/retvari/chainer:latest"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+        env:
+        - name: CHAINER_NEXT_SERVICE
+          value: ""
+        - name: CHAINER_LOAD_PER_REQUEST
+          value: "8ms"  # 50 mcore @ 10 qps
+        resources: 
+          requests: { cpu: "100m" }
+          limits: { cpu: "100m" }
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chain-3
+  labels:
+    app: chain-3
+    service: chain-3
+spec:
+  ports:
+  - port: 8888
+    name: http
+  selector:
+    app: chain-3
+---
