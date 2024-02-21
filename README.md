@@ -9,7 +9,7 @@ acting on each microservice.
 flowchart TD
 subgraph Z[" "]
 direction LR
-    L{LB} --> A[Chain 1] --> B[Chain] --> C[Chain 3]
+    L{LB} --> A[Chain 1] --> B[Chain 2] --> C[Chain 3]
 end
 ```
 
