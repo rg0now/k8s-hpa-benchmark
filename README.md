@@ -80,6 +80,11 @@ The following Prometheus queries can be used to monitor the workload:
   ```
   sum by (app) (rate(http_response_success_total[3m]))
   ```
+- downstream timeout rate grouped by microservice (note that HTTP timeouts are reported at the
+  caller, and not the callee):
+  ```
+  sum by (app) (rate(http_timeout_error_total[3m]))
+  ```
 - error rate grouped by microservice:
   ```
   sum by (app) (rate(http_response_error_total[3m]))
