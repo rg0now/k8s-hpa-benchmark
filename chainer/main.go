@@ -66,11 +66,15 @@ func main() {
 
 	responseSuccessTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "http_response_success_total",
-		Help: "Total number of HTTP responses with 2** status.",
+		Help: "Total number of successful HTTP handler runs.",
 	})
 	responseErrorTotal := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "http_response_error_total",
-		Help: "Total number of HTTP responses with 4** or 5** status.",
+		Help: "Total number of HTTP handler errors.",
+	})
+	timeoutErrorTotal := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "http_timeout_error_total",
+		Help: "Total number of timeouts for downstream HTTP queries.",
 	})
 
 	reg.MustRegister(
@@ -78,6 +82,7 @@ func main() {
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		responseSuccessTotal,
 		responseErrorTotal,
+		timeoutErrorTotal,
 	)
 
 	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
@@ -93,9 +98,15 @@ func main() {
 		if nextSvc != "" {
 			nextResp, err := client.Get("http://" + nextSvc)
 			if err != nil {
-				responseErrorTotal.Add(1)
-				log.Printf("Error querying next-service %q: %s", nextSvc, err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				if os.IsTimeout(err) {
+					timeoutErrorTotal.Add(1)
+					log.Printf("Timeout querying next-service %q: %s", nextSvc, err)
+					http.Error(w, err.Error(), http.StatusRequestTimeout)
+				} else {
+					responseErrorTotal.Add(1)
+					log.Printf("Error querying next-service %q: %s", nextSvc, err)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
 				return
 			}
 			resp := make(map[string]int)
