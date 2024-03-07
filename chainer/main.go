@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	EnvVarNameNextService = "CHAINER_NEXT_SERVICE"
-	EnvVarNameLoadPerReq  = "CHAINER_LOAD_PER_REQUEST"
-	loadUnit              = 5000
+	EnvVarNameNextService   = "CHAINER_NEXT_SERVICE"
+	EnvVarNameLoadPerReq    = "CHAINER_LOAD_PER_REQUEST"
+	EnvVarNameClientTimeout = "CHAINER_DOWNSTREAM_TIMEOUT"
+	loadUnit                = 5000
 )
 
 var (
@@ -60,6 +61,9 @@ func main() {
 	}
 	if val, ok := os.LookupEnv(EnvVarNameLoadPerReq); ok {
 		loadPerReq = mustParseDuration(val)
+	}
+	if val, ok := os.LookupEnv(EnvVarNameClientTimeout); ok {
+		clientTimeout = mustParseDuration(val)
 	}
 
 	reg := prometheus.NewRegistry()
